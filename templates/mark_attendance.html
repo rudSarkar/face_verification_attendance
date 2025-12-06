@@ -40,15 +40,48 @@
         margin-bottom: 1rem;
         text-align: center;
     }
+    
+    #liveness-status {
+        background: #fff3cd;
+        border: 2px solid #ffc107;
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 1rem auto;
+        max-width: 400px;
+        text-align: center;
+    }
+    
+    #liveness-status.verified {
+        background: #d4edda;
+        border-color: #28a745;
+    }
+    
+    .blink-indicator {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #ffc107;
+    }
+    
+    .blink-indicator.verified {
+        color: #28a745;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="card">
     <h2 style="color: #667eea; text-align: center; margin-bottom: 1rem;">Mark Your Attendance</h2>
-    <p style="text-align: center; color: #666; margin-bottom: 2rem;">
+    <p style="text-align: center; color: #666; margin-bottom: 1rem;">
         Check in at the start of class and check out when leaving
     </p>
+    
+    <div id="liveness-status">
+        <p style="margin: 0;">
+            👁️ <strong>Liveness Detection Active</strong><br>
+            <small>Please blink naturally to verify you're a real person</small>
+        </p>
+        <p class="blink-indicator" id="blink-count">Blinks: 0</p>
+    </div>
     
     <div class="form-group" style="max-width: 400px; margin: 0 auto 2rem;">
         <label for="course_code">Select Course</label>
@@ -83,6 +116,44 @@
 </div>
 
 <script>
+    // Track blinks detected from video feed
+    let blinkCount = 0;
+    let isLivenessVerified = false;
+    
+    // Poll backend for blink count
+    setInterval(() => {
+        fetch('/get-blink-count')
+            .then(response => response.json())
+            .then(data => {
+                updateLivenessStatus(data.blink_count);
+            })
+            .catch(error => {
+                console.error('Error fetching blink count:', error);
+            });
+    }, 500);  // Poll every 500ms
+    
+    // Update liveness status display
+    function updateLivenessStatus(blinks) {
+        blinkCount = blinks;
+        const blinkCountEl = document.getElementById('blink-count');
+        const livenessStatusEl = document.getElementById('liveness-status');
+        
+        blinkCountEl.textContent = `Blinks: ${blinks}`;
+        
+        if (blinks >= 1) {
+            isLivenessVerified = true;
+            livenessStatusEl.classList.add('verified');
+            blinkCountEl.classList.add('verified');
+            blinkCountEl.textContent = `✓ Verified (${blinks} blink${blinks > 1 ? 's' : ''})`;
+        } else {
+            isLivenessVerified = false;
+            livenessStatusEl.classList.remove('verified');
+            blinkCountEl.classList.remove('verified');
+        }
+    }
+    
+
+    
     function captureAttendance(action) {
         const courseCode = document.getElementById('course_code').value;
         const resultDiv = document.getElementById('result-message');
@@ -100,7 +171,7 @@
         
         checkinBtn.disabled = true;
         checkoutBtn.disabled = true;
-        activeBtn.textContent = 'Processing...';
+        activeBtn.textContent = 'Verifying...';
         
         fetch('/capture-attendance', {
             method: 'POST',
@@ -109,7 +180,8 @@
             },
             body: JSON.stringify({ 
                 course_code: courseCode,
-                action: action
+                action: action,
+                blink_count: blinkCount  // Send current blink count
             })
         })
         .then(response => response.json())
@@ -149,6 +221,12 @@
             } else {
                 let alertClass = 'alert-error';
                 let message = data.message;
+                
+                // Special handling for liveness check failure
+                if (data.liveness_required) {
+                    alertClass = 'alert-warning';
+                    message = '⚠️ ' + message + '<br><small>Keep looking at the camera and blink naturally</small>';
+                }
                 
                 if (data.can_checkout) {
                     alertClass = 'alert-info';

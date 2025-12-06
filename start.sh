@@ -37,6 +37,16 @@ else
     echo "✓ Dependencies already installed"
 fi
 
+# Download shape predictor if not present
+if [ ! -f "shape_predictor_68_face_landmarks.dat" ]; then
+    echo "⬇️  Downloading shape predictor model..."
+    wget http://dlib.net/files/shape_predictor_68_face_landmarks.dat.bz2
+    bzip2 -d shape_predictor_68_face_landmarks.dat.bz2
+    echo "✓ Shape predictor model downloaded"
+else
+    echo "✓ Shape predictor model already exists"
+fi
+
 echo ""
 
 # Check if database exists

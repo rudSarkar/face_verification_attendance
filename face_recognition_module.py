@@ -4,11 +4,25 @@ import os
 import numpy as np
 from models import Student
 import pickle
+from liveness_detection import LivenessDetector
 
 class FaceRecognitionSystem:
-    def __init__(self):
+    def __init__(self, enable_liveness=True):
         self.known_face_encodings = []
         self.known_face_ids = []
+        self.enable_liveness = enable_liveness
+        self.liveness_detector = None
+        
+        # Initialize liveness detector if enabled
+        if self.enable_liveness:
+            try:
+                self.liveness_detector = LivenessDetector()
+                print("✓ Liveness detection enabled")
+            except Exception as e:
+                print(f"⚠ Warning: Failed to initialize liveness detector: {str(e)}")
+                print("  Continuing without liveness detection...")
+                self.enable_liveness = False
+        
         self.load_known_faces()
     
     def load_known_faces(self):
@@ -65,11 +79,27 @@ class FaceRecognitionSystem:
         # Return average encoding for better accuracy
         return np.mean(encodings, axis=0)
     
-    def recognize_face_from_frame(self, frame, tolerance=0.6):
+    def recognize_face_from_frame(self, frame, tolerance=0.6, check_liveness=True):
         """
-        Recognize face from a video frame
-        Returns (student_id, confidence) or (None, None) if no match
+        Recognize face from a video frame with optional liveness detection
+        Returns (student_id, confidence, face_location, is_live) or (None, None, None, False) if no match
+        
+        Args:
+            frame: Input video frame
+            tolerance: Face matching tolerance (lower = more strict)
+            check_liveness: Whether to perform liveness detection
+        
+        Returns:
+            tuple: (student_id, confidence, face_location, is_live)
         """
+        # Perform liveness check if enabled
+        is_live = True
+        if check_liveness and self.enable_liveness and self.liveness_detector:
+            _, blinks, _, frame = self.liveness_detector.detect_blink(frame)
+            # Require at least 1 blink to be detected over the session
+            # The frontend will handle accumulating blinks over multiple frames
+            is_live = blinks >= 0  # We'll check blink count in the calling function
+        
         # Convert BGR to RGB (OpenCV uses BGR)
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         
@@ -78,7 +108,7 @@ class FaceRecognitionSystem:
         face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
         
         if len(face_encodings) == 0:
-            return None, None, None
+            return None, None, None, False
         
         # Check each face found in frame
         for face_encoding, face_location in zip(face_encodings, face_locations):
@@ -100,9 +130,9 @@ class FaceRecognitionSystem:
                 if matches[best_match_index]:
                     student_id = self.known_face_ids[best_match_index]
                     confidence = 1 - face_distances[best_match_index]
-                    return student_id, confidence, face_location
+                    return student_id, confidence, face_location, is_live
         
-        return None, None, None
+        return None, None, None, False
     
     def recognize_face_from_image(self, image_path, tolerance=0.6):
         """
@@ -144,18 +174,22 @@ class FaceRecognitionSystem:
             print(f"Error recognizing face: {str(e)}")
             return None, None
     
-    def draw_face_box(self, frame, face_location, student_id, confidence):
-        """Draw bounding box and label on frame"""
+    def draw_face_box(self, frame, face_location, student_id, confidence, is_live=True):
+        """Draw bounding box and label on frame with liveness indicator"""
         top, right, bottom, left = face_location
         
+        # Choose color based on liveness
+        color = (0, 255, 0) if is_live else (0, 165, 255)  # Green if live, Orange if not verified
+        
         # Draw rectangle
-        cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
+        cv2.rectangle(frame, (left, top), (right, bottom), color, 2)
         
         # Draw label
-        label = f"{student_id} ({confidence:.2%})"
-        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 255, 0), cv2.FILLED)
+        liveness_status = "✓ LIVE" if is_live else "⚠ VERIFY"
+        label = f"{student_id} ({confidence:.2%}) {liveness_status}"
+        cv2.rectangle(frame, (left, bottom - 35), (right, bottom), color, cv2.FILLED)
         cv2.putText(frame, label, (left + 6, bottom - 6), 
-                   cv2.FONT_HERSHEY_DUPLEX, 0.6, (255, 255, 255), 1)
+                   cv2.FONT_HERSHEY_DUPLEX, 0.5, (255, 255, 255), 1)
         
         return frame
 

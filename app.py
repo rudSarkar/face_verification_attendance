@@ -1,10 +1,33 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, send_file, Response
 import os
+import sys
 import cv2
 import numpy as np
 from werkzeug.utils import secure_filename
 from datetime import datetime
 import base64
+import logging
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+# Add src directory to path for imports
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+
+# Automatic startup initialization
+try:
+    from src.utils.startup import initialize_app
+    logger.info("Running startup initialization...")
+    if not initialize_app(silent=False):
+        logger.error("Startup initialization failed! Please fix errors before continuing.")
+        sys.exit(1)
+except Exception as e:
+    logger.warning(f"Could not run startup initialization: {e}")
+    logger.info("Continuing with manual initialization...")
 
 from database import init_db
 from models import Student, Course, Attendance, Admin, Settings
@@ -12,12 +35,15 @@ from face_recognition_module import FaceRecognitionSystem, process_student_image
 from export_utils import export_attendance_to_excel, export_student_attendance_summary
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-this-in-production'
+app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-this-in-production')
 app.config['UPLOAD_FOLDER'] = 'student_images'
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
-# Initialize database
-init_db()
+# Initialize database (backup if startup didn't run)
+try:
+    init_db()
+except:
+    pass
 
 # Global face recognition system
 fr_system = FaceRecognitionSystem()
@@ -47,21 +73,39 @@ def mark_attendance_page():
 
 @app.route('/video-feed')
 def video_feed():
-    """Video streaming route for face detection"""
+    """Video streaming route for face detection with liveness detection"""
     def generate():
         camera = cv2.VideoCapture(0)
+        
+        # Reset liveness detector for new session
+        if fr_system.enable_liveness and fr_system.liveness_detector:
+            fr_system.liveness_detector.reset_blink_counter()
         
         while True:
             success, frame = camera.read()
             if not success:
                 break
             
-            # Detect and recognize face
-            student_id, confidence, face_location = fr_system.recognize_face_from_frame(frame)
+            # Detect and recognize face with liveness check
+            student_id, confidence, face_location, is_live = fr_system.recognize_face_from_frame(frame, check_liveness=True)
+            
+            # Get blink count if liveness detection is enabled
+            blink_count = 0
+            if fr_system.enable_liveness and fr_system.liveness_detector:
+                blink_count = fr_system.liveness_detector.total_blinks
             
             if student_id and confidence > 0.5:
-                # Draw face box
-                frame = fr_system.draw_face_box(frame, face_location, student_id, confidence)
+                # Determine if liveness is verified (at least 1 blink detected)
+                is_verified = blink_count >= 1 if fr_system.enable_liveness else True
+                # Draw face box with liveness status
+                frame = fr_system.draw_face_box(frame, face_location, student_id, confidence, is_verified)
+            
+            # Add liveness instructions overlay
+            if fr_system.enable_liveness:
+                cv2.putText(frame, "Please blink naturally", (10, 30),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
+                cv2.putText(frame, f"Blinks detected: {blink_count}", (10, 60),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 255), 2)
             
             # Encode frame
             ret, buffer = cv2.imencode('.jpg', frame)
@@ -74,15 +118,32 @@ def video_feed():
     
     return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
+@app.route('/get-blink-count')
+def get_blink_count():
+    """Get current blink count from liveness detector"""
+    blink_count = 0
+    if fr_system.enable_liveness and fr_system.liveness_detector:
+        blink_count = fr_system.liveness_detector.total_blinks
+    return jsonify({'blink_count': blink_count})
+
 @app.route('/capture-attendance', methods=['POST'])
 def capture_attendance():
-    """Capture and mark attendance from webcam"""
+    """Capture and mark attendance from webcam with liveness verification"""
     data = request.get_json()
     course_code = data.get('course_code')
     action = data.get('action', 'check_in')  # 'check_in' or 'check_out'
+    blink_count = data.get('blink_count', 0)  # Blinks detected from video feed
     
     if not course_code:
         return jsonify({'success': False, 'message': 'Course code required'})
+    
+    # Check liveness requirement
+    if fr_system.enable_liveness and blink_count < 1:
+        return jsonify({
+            'success': False, 
+            'message': 'Liveness check failed. Please blink naturally and try again.',
+            'liveness_required': True
+        })
     
     # Capture frame from webcam
     camera = cv2.VideoCapture(0)
@@ -92,8 +153,8 @@ def capture_attendance():
     if not success:
         return jsonify({'success': False, 'message': 'Failed to capture image'})
     
-    # Recognize face
-    student_id, confidence, face_location = fr_system.recognize_face_from_frame(frame)
+    # Recognize face (skip liveness check here as it's already done)
+    student_id, confidence, face_location, _ = fr_system.recognize_face_from_frame(frame, check_liveness=False)
     
     if not student_id or confidence < 0.5:
         return jsonify({'success': False, 'message': 'Face not recognized. Please try again.'})

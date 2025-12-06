@@ -2,6 +2,17 @@
 
 A comprehensive AI-powered attendance management system using face recognition technology with **check-in/check-out functionality** to prevent class bunking. Built with Flask, OpenCV, and SQLite.
 
+## 🎉 Latest Updates
+
+### 🚀 Automatic Setup & Improved Structure
+- ✨ **One-command startup**: Just run `python run.py`
+- ✨ **Auto-initialization**: Automatically sets up everything on first run
+- ✨ **Better organization**: Clean, modular project structure
+- ✨ **Interactive script manager**: Easy access to all utilities
+- ✨ **Comprehensive logging**: Better error tracking and debugging
+
+> **New users**: Simply run `python run.py` after installing dependencies!
+
 ## ✨ Cross-Platform Support
 
 **Works on Windows, macOS, and Linux!**
@@ -11,9 +22,7 @@ A comprehensive AI-powered attendance management system using face recognition t
 - 💻 **Platform-specific scripts** (`.bat` for Windows, `.sh` for Unix)
 - 📦 **All dependencies work across platforms**
 
-> **🚀 New to this project? Check [QUICKSTART.md](QUICKSTART.md) for the fastest way to get started!**
-
-## 🆕 NEW: Check-In/Check-Out System
+## 🆕 Check-In/Check-Out System
 
 **Prevents students from leaving early!**
 
@@ -23,20 +32,23 @@ A comprehensive AI-powered attendance management system using face recognition t
 - ✅ Minimum duration required for "Present" status
 - ✅ Early departure flagged as "Absent (Left Early)"
 
-📚 **[Read the Full Guide](CHECKIN_CHECKOUT_GUIDE.md)** | 📖 **[Quick Start](QUICK_START.md)**
+📚 **[Read the Full Guide](docs/CHECKIN_CHECKOUT_GUIDE.md)** | 📖 **[Quick Start](docs/QUICK_START.md)**
 
 ## Features ✨
 
 - **Face Recognition**: Automatic student identification using advanced AI
+- **🛡️ Anti-Spoofing**: Liveness detection prevents photo/picture attacks (NEW!)
 - **Check-In/Check-Out**: Track entry and exit times with duration monitoring
 - **Duration Enforcement**: Configurable minimum class duration per course
 - **Web Interface**: User-friendly web application for marking attendance
 - **Admin Panel**: Complete dashboard for managing students, courses, and attendance
-- **Real-time Camera**: Live webcam feed for face detection
+- **Real-time Camera**: Live webcam feed for face detection with blink counter
 - **Excel Export**: Export attendance reports with timing details
 - **Attendance Tracking**: Calculate and monitor attendance percentages
 - **SQLite Database**: Lightweight and efficient data storage
 - **Jupyter Notebook**: Interactive exploration and testing
+
+> **🔒 Security Note**: The system now includes blink detection to verify you're a real person, not a photo! See [LIVENESS_DETECTION.md](LIVENESS_DETECTION.md) for details.
 
 ## Tech Stack 🛠️
 
@@ -49,71 +61,130 @@ A comprehensive AI-powered attendance management system using face recognition t
 
 ## Project Structure 📁
 
+The project follows an organized, modular structure for easy maintenance:
+
 ```
 face_with_attendence/
-├── app.py                          # Main Flask application
-├── database.py                     # Database initialization and connection
-├── models.py                       # Database models (Student, Course, Attendance)
-├── face_recognition_module.py     # Face recognition core functionality
-├── export_utils.py                # Excel export utilities
-├── migrate_database.py            # Database migration script
-├── requirements.txt               # Python dependencies
-├── face_recognition_attendance.ipynb  # Jupyter notebook for exploration
+├── 📁 src/                          # Source code modules
+│   ├── core/                        # Core business logic
+│   ├── utils/                       # Utilities
+│   │   └── startup.py              # Auto-initialization on startup
+│   └── routes/                      # Route handlers
 │
-├── CHECKIN_CHECKOUT_GUIDE.md      # Check-in/check-out documentation
-├── QUICK_START.md                 # Quick reference guide
-├── IMPLEMENTATION_SUMMARY.md      # Technical implementation details
+├── 📁 config/                       # Configuration
+│   └── settings.py                  # Centralized settings
 │
-├── templates/                     # HTML templates
-│   ├── base.html
-│   ├── index.html
-│   ├── login.html
-│   ├── mark_attendance.html
-│   ├── admin_dashboard.html
-│   ├── manage_students.html
-│   ├── add_student.html
-│   ├── manage_courses.html
-│   ├── add_course.html
-│   ├── view_attendance.html
-│   ├── student_attendance.html
-│   ├── course_attendance.html
-│   └── settings.html
+├── 📁 scripts/                      # Utility scripts
+│   ├── manager.py                   # Interactive script manager ⭐
+│   ├── download_model.py           # Liveness model downloader
+│   ├── verify_installation.py      # Installation checker
+│   └── verify_anti_spoofing.py     # Anti-spoofing verifier
 │
-├── static/                        # Static files (CSS, JS, images)
-├── student_images/                # Student photos for training
-├── exports/                       # Exported Excel files
-└── attendance_system.db           # SQLite database (created on first run)
+├── 📁 templates/                    # HTML templates
+├── 📁 static/                       # CSS, JavaScript
+├── 📁 student_images/              # Student photos
+├── 📁 exports/                      # Excel exports
+├── 📁 docs/                         # Documentation
+│   ├── PROJECT_STRUCTURE.md        # Detailed structure guide
+│   ├── CHECKIN_CHECKOUT_GUIDE.md
+│   └── ... (more guides)
+│
+├── 🐍 run.py                        # Quick start script ⭐ NEW!
+├── 🐍 app.py                        # Main Flask application
+├── 🐍 database.py                   # Database operations
+├── 🐍 models.py                     # Data models
+├── 🐍 face_recognition_module.py   # Face recognition
+├── 🐍 liveness_detection.py        # Anti-spoofing
+│
+├── 📝 requirements.txt              # Dependencies
+└── 📝 README.md                     # This file
+```
+
+> 📖 See [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md) for detailed information about the new structure.
+
+## 🚀 Quick Start (New & Improved!)
+
+### Fastest Way to Get Started
+
+```bash
+# 1. Install dependencies (first time only)
+pip install -r requirements.txt
+
+# 2. Run the application (auto-setup included!)
+python run.py
+```
+
+That's it! The application now automatically:
+- ✅ Creates all required directories
+- ✅ Checks dependencies
+- ✅ Initializes the database
+- ✅ Sets up default configuration
+- ✅ Starts the Flask server
+
+Access at **http://localhost:8181**
+
+Default admin credentials:
+- Username: `admin`
+- Password: `admin123`
+
+### Alternative Methods
+
+#### Option 1: Interactive Script Manager
+```bash
+python scripts/manager.py
+```
+Provides a menu with options for setup, verification, testing, and more!
+
+#### Option 2: Docker (Easiest - No Python Required)
+```bash
+docker-compose up -d
+```
+See [DOCKER.md](docs/DOCKER.md) for details.
+
+#### Option 3: Traditional Method
+```bash
+# Setup (first time only)
+python setup.py
+
+# Start application
+python app.py
 ```
 
 ## Installation 🚀
 
-### Option 1: Docker (Easiest - Recommended for All Platforms)
+### Prerequisites
 
-**No Python installation needed! Works on Windows, macOS, and Linux:**
+- Python 3.8 or higher
+- Webcam (for face recognition)
+- pip (Python package manager)
 
-```bash
-# Using Docker Compose
-docker-compose up -d
-```
+### Step-by-Step Installation
 
-Access at http://localhost:8181
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd face_with_attendence
+   ```
 
-See [DOCKER.md](DOCKER.md) for detailed Docker instructions.
+2. **Create virtual environment (recommended)**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On macOS/Linux
+   # OR
+   venv\Scripts\activate  # On Windows
+   ```
 
-### Option 2: Quick Start with Python (All Platforms)
+3. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-**If you prefer running without Docker:**
+4. **Run the application**
+   ```bash
+   python run.py
+   ```
 
-```bash
-# Run the cross-platform startup script
-python start.py
-```
-
-This automatically handles:
-- Virtual environment creation
-- Dependency installation
-- Database initialization
-- Application startup
+The application handles everything else automatically!
 
 ### Prerequisites (for Python installation)
 

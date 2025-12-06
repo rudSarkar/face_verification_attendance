@@ -59,3 +59,4 @@ exports/*
 .env.local
 attendance_system.db
 student_images/*
+shape_predictor_68_face_landmarks.dat
