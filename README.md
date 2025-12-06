@@ -440,5 +440,3 @@ For issues, questions, or suggestions:
 ---
 
 **Made with ❤️ for educational institutions**
-
-*Simplifying attendance management through AI*
