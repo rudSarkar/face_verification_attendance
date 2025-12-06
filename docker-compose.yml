@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  face-attendance:
+    build: .
+    container_name: face-attendance-system
+    ports:
+      - "8181:8181"
+    volumes:
+      # Persist student images
+      - ./student_images:/app/student_images
+      # Persist exports
+      - ./exports:/app/exports
+      # Persist database
+      - ./attendance_system.db:/app/attendance_system.db
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=app.py
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8181"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# To run:
+# docker-compose up -d
+#
+# To stop:
+# docker-compose down
+#
+# To view logs:
+# docker-compose logs -f

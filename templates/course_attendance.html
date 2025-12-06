@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Course Attendance - {{ course['course_name'] }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #667eea; margin-bottom: 1rem;">{{ course['course_name'] }}</h2>
+    <p style="color: #666;">Course Code: {{ course['course_code'] }}</p>
+    {% if course['instructor'] %}
+    <p style="color: #666;">Instructor: {{ course['instructor'] }}</p>
+    {% endif %}
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('export_course_attendance', course_code=course['course_code']) }}" 
+           class="btn btn-success">📁 Export to Excel</a>
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="color: #333; margin-bottom: 1rem;">Attendance Records</h3>
+    {% if records %}
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td>{{ record['student_id'] }}</td>
+                <td>{{ record['name'] }}</td>
+                <td>{{ record['date'] }}</td>
+                <td>{{ record['time'] }}</td>
+                <td>
+                    <span style="color: {% if record['status'] == 'Present' %}green{% else %}red{% endif %}; font-weight: bold;">
+                        {{ record['status'] }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #666; text-align: center; padding: 2rem;">
+        No attendance records found for this course.
+    </p>
+    {% endif %}
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('manage_courses') }}" class="btn btn-primary">← Back to Courses</a>
+    </div>
+</div>
+{% endblock %}

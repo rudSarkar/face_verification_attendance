@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}View Attendance{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2 style="color: #667eea;">All Attendance Records</h2>
+        <a href="{{ url_for('export_attendance') }}" class="btn btn-success">📁 Export to Excel</a>
+    </div>
+    
+    {% if records %}
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Course</th>
+                <th>Date</th>
+                <th>Check In</th>
+                <th>Check Out</th>
+                <th>Duration (mins)</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td>{{ record['student_id'] }}</td>
+                <td>{{ record['name'] }}</td>
+                <td>{{ record['course_code'] }}<br><small>{{ record['course_name'] }}</small></td>
+                <td>{{ record['date'] }}</td>
+                <td>{{ record['check_in_time'] }}</td>
+                <td>{{ record['check_out_time'] or '-' }}</td>
+                <td>{{ record['duration_minutes'] or '-' }}</td>
+                <td>
+                    <span style="
+                        color: {% if record['status'] == 'Present' %}green
+                        {% elif record['status'] == 'Checked In' %}orange
+                        {% else %}red{% endif %}; 
+                        font-weight: bold;">
+                        {{ record['status'] }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #666; text-align: center; padding: 2rem;">
+        No attendance records found.
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #667eea; margin-bottom: 2rem;">Admin Dashboard</h2>
+    
+    <div class="grid">
+        <div class="stat-card">
+            <h3>{{ total_students }}</h3>
+            <p>Total Students</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ total_courses }}</h3>
+            <p>Total Courses</p>
+        </div>
+        <div class="stat-card">
+            <h3>{{ total_attendance }}</h3>
+            <p>Total Attendance Records</p>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="color: #333; margin-bottom: 1rem;">Quick Actions</h3>
+    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+        <a href="{{ url_for('manage_students') }}" class="btn btn-primary">👥 Manage Students</a>
+        <a href="{{ url_for('manage_courses') }}" class="btn btn-primary">📚 Manage Courses</a>
+        <a href="{{ url_for('view_attendance') }}" class="btn btn-primary">📊 View Attendance</a>
+        <a href="{{ url_for('settings') }}" class="btn btn-primary">⚙️ Settings</a>
+        <a href="{{ url_for('export_summary') }}" class="btn btn-success">📁 Export Summary</a>
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="color: #333; margin-bottom: 1rem;">Recent Attendance</h3>
+    {% if recent_attendance %}
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Student Name</th>
+                <th>Course</th>
+                <th>Date</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in recent_attendance %}
+            <tr>
+                <td>{{ record['student_id'] }}</td>
+                <td>{{ record['name'] }}</td>
+                <td>{{ record['course_code'] }}</td>
+                <td>{{ record['date'] }}</td>
+                <td>{{ record['time'] }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #666;">No attendance records yet.</p>
+    {% endif %}
+</div>
+{% endblock %}

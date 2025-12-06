@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #667eea; margin-bottom: 1rem;">Welcome to Face Recognition Attendance System</h2>
+    <p style="color: #666; font-size: 1.1rem; line-height: 1.6;">
+        This system uses advanced AI-powered face recognition to automatically mark attendance. 
+        Students can simply show their face to the camera, and the system will identify them and record their attendance.
+    </p>
+    
+    <div style="margin-top: 2rem;">
+        <h3 style="color: #333; margin-bottom: 1rem;">Quick Start Guide</h3>
+        <ol style="color: #666; line-height: 2;">
+            <li><strong>For Students:</strong> Click "Mark Attendance" to record your attendance using face recognition</li>
+            <li><strong>For Administrators:</strong> Click "Admin Login" to manage students, courses, and view reports</li>
+        </ol>
+    </div>
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('mark_attendance_page') }}" class="btn btn-primary" style="margin-right: 1rem;">📸 Mark Attendance</a>
+        <a href="{{ url_for('login') }}" class="btn btn-success">🔐 Admin Panel</a>
+    </div>
+</div>
+
+<div class="card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+    <h3 style="margin-bottom: 1rem;">Features</h3>
+    <div class="grid">
+        <div style="text-align: center;">
+            <h4 style="font-size: 2rem; margin-bottom: 0.5rem;">👤</h4>
+            <p>Face Recognition</p>
+        </div>
+        <div style="text-align: center;">
+            <h4 style="font-size: 2rem; margin-bottom: 0.5rem;">📊</h4>
+            <p>Attendance Reports</p>
+        </div>
+        <div style="text-align: center;">
+            <h4 style="font-size: 2rem; margin-bottom: 0.5rem;">📁</h4>
+            <p>Excel Export</p>
+        </div>
+        <div style="text-align: center;">
+            <h4 style="font-size: 2rem; margin-bottom: 0.5rem;">⚙️</h4>
+            <p>Admin Dashboard</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

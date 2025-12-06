@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}Add Course{% endblock %}
+
+{% block extra_css %}
+<style>
+    .schedule-builder {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    
+    .day-selector {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    
+    .day-checkbox {
+        display: none;
+    }
+    
+    .day-label {
+        padding: 0.5rem 1rem;
+        background: white;
+        border: 2px solid #ddd;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: all 0.3s;
+        user-select: none;
+    }
+    
+    .day-checkbox:checked + .day-label {
+        background: #667eea;
+        color: white;
+        border-color: #667eea;
+    }
+    
+    .time-inputs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .schedule-preview {
+        background: #e9ecef;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-top: 1rem;
+        min-height: 40px;
+        color: #495057;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 700px; margin: 2rem auto;">
+    <h2 style="color: #667eea; margin-bottom: 2rem;">Add New Course</h2>
+    
+    {% if error %}
+    <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    
+    <form method="POST" id="courseForm">
+        <div class="form-group">
+            <label for="course_code">Course Code *</label>
+            <input type="text" id="course_code" name="course_code" required 
+                   placeholder="e.g., CS101">
+        </div>
+        
+        <div class="form-group">
+            <label for="course_name">Course Name *</label>
+            <input type="text" id="course_name" name="course_name" required
+                   placeholder="e.g., Introduction to Computer Science">
+        </div>
+        
+        <div class="form-group">
+            <label for="instructor">Instructor</label>
+            <input type="text" id="instructor" name="instructor"
+                   placeholder="e.g., Dr. John Smith">
+        </div>
+        
+        <div class="form-group">
+            <label for="total_classes">Total Classes (Expected) *</label>
+            <input type="number" id="total_classes" name="total_classes" required 
+                   min="1" max="200" value="30"
+                   placeholder="e.g., 30 classes for the semester">
+            <small style="color: #666; display: block; margin-top: 0.3rem;">
+                This will be used to calculate attendance percentage
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label for="class_duration_minutes">Class Duration (Minutes) *</label>
+            <input type="number" id="class_duration_minutes" name="class_duration_minutes" required 
+                   min="30" max="300" value="60"
+                   placeholder="e.g., 60 minutes">
+            <small style="color: #666; display: block; margin-top: 0.3rem;">
+                Total duration of the class session
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label for="min_duration_minutes">Minimum Duration Required (Minutes) *</label>
+            <input type="number" id="min_duration_minutes" name="min_duration_minutes" required 
+                   min="15" max="300" value="45"
+                   placeholder="e.g., 45 minutes">
+            <small style="color: #666; display: block; margin-top: 0.3rem;">
+                Students must stay for at least this duration to be marked present
+            </small>
+        </div>
+        
+        <div class="form-group">
+            <label>Schedule Builder</label>
+            <div class="schedule-builder">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Select Days:</label>
+                <div class="day-selector">
+                    <input type="checkbox" id="monday" class="day-checkbox" value="Mon">
+                    <label for="monday" class="day-label">Monday</label>
+                    
+                    <input type="checkbox" id="tuesday" class="day-checkbox" value="Tue">
+                    <label for="tuesday" class="day-label">Tuesday</label>
+                    
+                    <input type="checkbox" id="wednesday" class="day-checkbox" value="Wed">
+                    <label for="wednesday" class="day-label">Wednesday</label>
+                    
+                    <input type="checkbox" id="thursday" class="day-checkbox" value="Thu">
+                    <label for="thursday" class="day-label">Thursday</label>
+                    
+                    <input type="checkbox" id="friday" class="day-checkbox" value="Fri">
+                    <label for="friday" class="day-label">Friday</label>
+                    
+                    <input type="checkbox" id="saturday" class="day-checkbox" value="Sat">
+                    <label for="saturday" class="day-label">Saturday</label>
+                    
+                    <input type="checkbox" id="sunday" class="day-checkbox" value="Sun">
+                    <label for="sunday" class="day-label">Sunday</label>
+                </div>
+                
+                <div class="time-inputs">
+                    <div>
+                        <label for="start_time" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Start Time:</label>
+                        <input type="time" id="start_time" class="time-input" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+                    <div>
+                        <label for="end_time" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">End Time:</label>
+                        <input type="time" id="end_time" class="time-input" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px;">
+                    </div>
+                </div>
+                
+                <div class="schedule-preview" id="schedulePreview">
+                    Schedule will appear here...
+                </div>
+            </div>
+            
+            <input type="hidden" id="schedule" name="schedule">
+        </div>
+        
+        <div style="display: flex; gap: 1rem;">
+            <button type="submit" class="btn btn-success">Add Course</button>
+            <a href="{{ url_for('manage_courses') }}" class="btn btn-danger">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Get all day checkboxes and time inputs
+    const dayCheckboxes = document.querySelectorAll('.day-checkbox');
+    const startTimeInput = document.getElementById('start_time');
+    const endTimeInput = document.getElementById('end_time');
+    const schedulePreview = document.getElementById('schedulePreview');
+    const scheduleInput = document.getElementById('schedule');
+    
+    // Set default times
+    startTimeInput.value = '09:00';
+    endTimeInput.value = '10:30';
+    
+    function updateSchedule() {
+        const selectedDays = [];
+        dayCheckboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                selectedDays.push(checkbox.value);
+            }
+        });
+        
+        const startTime = startTimeInput.value;
+        const endTime = endTimeInput.value;
+        
+        if (selectedDays.length === 0) {
+            schedulePreview.textContent = 'Please select at least one day';
+            schedulePreview.style.color = '#999';
+            scheduleInput.value = '';
+            return;
+        }
+        
+        if (!startTime || !endTime) {
+            schedulePreview.textContent = 'Please select start and end times';
+            schedulePreview.style.color = '#999';
+            scheduleInput.value = '';
+            return;
+        }
+        
+        // Format time to 12-hour format
+        function formatTime(time) {
+            const [hours, minutes] = time.split(':');
+            const hour = parseInt(hours);
+            const ampm = hour >= 12 ? 'PM' : 'AM';
+            const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+            return `${displayHour}:${minutes} ${ampm}`;
+        }
+        
+        const scheduleText = `${selectedDays.join('/')} ${formatTime(startTime)} - ${formatTime(endTime)}`;
+        schedulePreview.textContent = scheduleText;
+        schedulePreview.style.color = '#495057';
+        scheduleInput.value = scheduleText;
+    }
+    
+    // Add event listeners
+    dayCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSchedule);
+    });
+    
+    startTimeInput.addEventListener('change', updateSchedule);
+    endTimeInput.addEventListener('change', updateSchedule);
+    
+    // Initial update
+    updateSchedule();
+    
+    // Form validation
+    document.getElementById('courseForm').addEventListener('submit', function(e) {
+        if (!scheduleInput.value) {
+            e.preventDefault();
+            alert('Please configure the class schedule');
+        }
+    });
+</script>
+{% endblock %}

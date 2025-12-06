@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Student Attendance - {{ student['name'] }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #667eea; margin-bottom: 1rem;">Attendance for {{ student['name'] }}</h2>
+    <p style="color: #666;">Student ID: {{ student['student_id'] }}</p>
+    
+    <div class="grid" style="margin-top: 2rem;">
+        {% for course_code, percentage in percentages.items() %}
+        <div class="stat-card">
+            <h3 style="color: {% if percentage >= threshold %}green{% else %}red{% endif %};">
+                {{ percentage }}%
+            </h3>
+            <p>{{ course_code }}</p>
+            {% if percentage < threshold %}
+            <small style="color: red;">Below threshold ({{ threshold }}%)</small>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<div class="card">
+    <h3 style="color: #333; margin-bottom: 1rem;">Attendance History</h3>
+    {% if records %}
+    <table>
+        <thead>
+            <tr>
+                <th>Course Code</th>
+                <th>Course Name</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr>
+                <td>{{ record['course_code'] }}</td>
+                <td>{{ record['course_name'] }}</td>
+                <td>{{ record['date'] }}</td>
+                <td>{{ record['time'] }}</td>
+                <td>
+                    <span style="color: {% if record['status'] == 'Present' %}green{% else %}red{% endif %}; font-weight: bold;">
+                        {{ record['status'] }}
+                    </span>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #666; text-align: center; padding: 2rem;">
+        No attendance records found for this student.
+    </p>
+    {% endif %}
+    
+    <div style="margin-top: 2rem;">
+        <a href="{{ url_for('manage_students') }}" class="btn btn-primary">← Back to Students</a>
+    </div>
+</div>
+{% endblock %}

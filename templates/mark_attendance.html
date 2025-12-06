@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance{% endblock %}
+
+{% block extra_css %}
+<style>
+    #video-container {
+        position: relative;
+        max-width: 640px;
+        margin: 2rem auto;
+    }
+    
+    #video-feed {
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    }
+    
+    .attendance-btn {
+        width: 100%;
+        margin-top: 0.5rem;
+        font-size: 1.2rem;
+        padding: 1rem;
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .btn-group button {
+        flex: 1;
+    }
+    
+    #status-info {
+        background: #f0f4ff;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2 style="color: #667eea; text-align: center; margin-bottom: 1rem;">Mark Your Attendance</h2>
+    <p style="text-align: center; color: #666; margin-bottom: 2rem;">
+        Check in at the start of class and check out when leaving
+    </p>
+    
+    <div class="form-group" style="max-width: 400px; margin: 0 auto 2rem;">
+        <label for="course_code">Select Course</label>
+        <select id="course_code" name="course_code" required>
+            <option value="">-- Select a Course --</option>
+            {% for course in courses %}
+            <option value="{{ course['course_code'] }}">
+                {{ course['course_code'] }} - {{ course['course_name'] }} 
+                (Min: {{ course['min_duration_minutes'] }} mins)
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+    
+    <div id="status-info" style="display:none;">
+        <p id="status-text"></p>
+    </div>
+    
+    <div id="video-container">
+        <img id="video-feed" src="{{ url_for('video_feed') }}" alt="Camera Feed">
+        <div class="btn-group">
+            <button id="checkin-btn" class="btn btn-success attendance-btn" onclick="captureAttendance('check_in')">
+                ✅ Check In
+            </button>
+            <button id="checkout-btn" class="btn btn-primary attendance-btn" onclick="captureAttendance('check_out')">
+                🚪 Check Out
+            </button>
+        </div>
+    </div>
+    
+    <div id="result-message" style="margin-top: 2rem; text-align: center;"></div>
+</div>
+
+<script>
+    function captureAttendance(action) {
+        const courseCode = document.getElementById('course_code').value;
+        const resultDiv = document.getElementById('result-message');
+        
+        if (!courseCode) {
+            resultDiv.innerHTML = '<div class="alert alert-error">Please select a course first</div>';
+            return;
+        }
+        
+        // Disable buttons during capture
+        const checkinBtn = document.getElementById('checkin-btn');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const originalText = action === 'check_in' ? checkinBtn.textContent : checkoutBtn.textContent;
+        const activeBtn = action === 'check_in' ? checkinBtn : checkoutBtn;
+        
+        checkinBtn.disabled = true;
+        checkoutBtn.disabled = true;
+        activeBtn.textContent = 'Processing...';
+        
+        fetch('/capture-attendance', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+                course_code: courseCode,
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                let statusClass = 'alert-success';
+                let statusIcon = '✅';
+                
+                if (data.action === 'check_out') {
+                    if (data.status === 'Present') {
+                        statusIcon = '✅';
+                        statusClass = 'alert-success';
+                    } else {
+                        statusIcon = '⚠️';
+                        statusClass = 'alert-warning';
+                    }
+                }
+                
+                resultDiv.innerHTML = `
+                    <div class="alert ${statusClass}">
+                        <h3>${statusIcon} ${data.message}</h3>
+                        <p><strong>Student:</strong> ${data.student_name} (${data.student_id})</p>
+                        <p><strong>Confidence:</strong> ${data.confidence}</p>
+                    </div>
+                `;
+                
+                // Update status info
+                const statusInfo = document.getElementById('status-info');
+                const statusText = document.getElementById('status-text');
+                if (data.action === 'check_in') {
+                    statusInfo.style.display = 'block';
+                    statusText.innerHTML = '<strong>Status:</strong> Checked In - Remember to check out before leaving!';
+                } else if (data.action === 'check_out') {
+                    statusInfo.style.display = 'block';
+                    statusText.innerHTML = `<strong>Final Status:</strong> ${data.status}`;
+                }
+            } else {
+                let alertClass = 'alert-error';
+                let message = data.message;
+                
+                if (data.can_checkout) {
+                    alertClass = 'alert-info';
+                }
+                
+                if (data.student_name) {
+                    message += `<br><strong>Recognized:</strong> ${data.student_name} (${data.student_id})`;
+                }
+                
+                if (data.status) {
+                    message += `<br><strong>Status:</strong> ${data.status}`;
+                }
+                
+                resultDiv.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            }
+        })
+        .catch(error => {
+            resultDiv.innerHTML = '<div class="alert alert-error">Error capturing attendance. Please try again.</div>';
+        })
+        .finally(() => {
+            checkinBtn.disabled = false;
+            checkoutBtn.disabled = false;
+            activeBtn.textContent = originalText;
+        });
+    }
+
+</script>
+{% endblock %}
