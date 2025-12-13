@@ -6,13 +6,6 @@ services:
     container_name: face-attendance-system
     ports:
       - "8181:8181"
-    volumes:
-      # Persist student images
-      - ./student_images:/app/student_images
-      # Persist exports
-      - ./exports:/app/exports
-      # Persist database
-      - ./attendance_system.db:/app/attendance_system.db
     environment:
       - FLASK_ENV=production
       - FLASK_APP=app.py
