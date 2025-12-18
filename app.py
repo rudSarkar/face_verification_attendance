@@ -312,6 +312,25 @@ def add_student():
     
     return render_template('add_student.html')
 
+@app.route('/admin/students/edit/<student_id>', methods=['GET', 'POST'])
+@login_required
+def edit_student(student_id):
+    """Edit student details"""
+    student = Student.get_student_by_id(student_id)
+    
+    if not student:
+        return redirect(url_for('manage_students'))
+    
+    if request.method == 'POST':
+        name = request.form.get('name')
+        email = request.form.get('email')
+        phone = request.form.get('phone')
+        
+        Student.update_student(student_id, name, email, phone)
+        return redirect(url_for('manage_students'))
+    
+    return render_template('edit_student.html', student=student)
+
 @app.route('/admin/students/delete/<student_id>', methods=['POST'])
 @login_required
 def delete_student(student_id):
@@ -352,6 +371,29 @@ def add_course():
                                  error='Course code already exists')
     
     return render_template('add_course.html')
+
+@app.route('/admin/courses/edit/<course_code>', methods=['GET', 'POST'])
+@login_required
+def edit_course(course_code):
+    """Edit course details"""
+    course = Course.get_course_by_code(course_code)
+    
+    if not course:
+        return redirect(url_for('manage_courses'))
+    
+    if request.method == 'POST':
+        course_name = request.form.get('course_name')
+        instructor = request.form.get('instructor')
+        schedule = request.form.get('schedule')
+        total_classes = request.form.get('total_classes', type=int, default=30)
+        class_duration = request.form.get('class_duration_minutes', type=int, default=60)
+        min_duration = request.form.get('min_duration_minutes', type=int, default=45)
+        
+        Course.update_course(course_code, course_name, instructor, schedule, 
+                           total_classes, class_duration, min_duration)
+        return redirect(url_for('manage_courses'))
+    
+    return render_template('edit_course.html', course=course)
 
 @app.route('/admin/courses/delete/<course_code>', methods=['POST'])
 @login_required
